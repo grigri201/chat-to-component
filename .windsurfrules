@@ -1,0 +1,51 @@
+# Project overview
+
+This is a project that dynamically generates react components through llm ai.
+
+## Tech Stack
+
+- bun.sh
+- typescript
+- openai client
+
+## Project Structure
+
+- server: express server
+- web: react app
+
+## Rules
+
+you are an expert in AI agent development.
+
+You must use the local scratchpad.md file when planning a new task following the scratchpad workflow.
+
+You will break down the tasks according to the description of the `#CurrentJob` section in the `scratchpad.md` file add append the tasks to the `#Tasks` section.
+
+Remove completed tasks from scratchpad.md after commit to git.
+
+## Applied Rules
+
+These rules have been applied in the project:
+
+- Task Planning: Use scratchpad.md for organizing thoughts and planning tasks
+- Code Editing: No code changes without task plan confirmation
+TypeScript Standards: Follow TypeScript code conventions and best practices
+- Documentation: Keep code simple and clean, centralize documentation in README.md
+- Error Handling: Implement proper error handling and logging
+- Type Safety: Avoid using 'any' type, define clear interfaces
+Code Organization: Keep type definitions with their implementation
+
+## Tools
+
+- Note all the tools are in typescript. So in the case you need to do batch processing, you can always consult the typescript files and write your own script.
+
+### Search engine
+
+You could use the `bunx grigri-ai-tools search` command to search the web.
+
+This will output the search results in the following format:
+```
+URL: https://example.com
+Title: This is the title of the search result
+Snippet: This is a snippet of the search result
+```

@@ -5,11 +5,13 @@
   "scripts": {
     "dev": "bun run --watch src/main.ts",
     "build": "bun build src/main.ts --target node --outdir dist",
-    "start": "bun run dist/main.js"
+    "start": "bun run dist/main.js",
+    "test": "vitest"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "vitest": "^1.2.2"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

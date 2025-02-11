@@ -1,29 +1,60 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
+import { randomUUID } from 'crypto';
+import {  generateCode } from './systemPrompts';
+import { placeOrderTool } from './tools/placeOrder.tool';
+
+type Message = OpenAI.Chat.ChatCompletionMessageParam;
+
+interface Session {
+  messages: Message[];
+  lastActivity: Date;
+}
 
 @Injectable()
 export class OpenAIService {
   private openai: OpenAI;
+  private sessions: Map<string, Session>;
 
   constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
+    this.sessions = new Map();
   }
 
-  async completion(prompt: string, systemPrompt?: string) {
-    const messages = [
-      ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
-      { role: 'user' as const, content: prompt },
-    ];
+  private getSession(sessionId?: string): { sessionId: string; isNew: boolean } {
+    if (sessionId && this.sessions.has(sessionId)) {
+      return { sessionId, isNew: false };
+    }
+    const newSessionId = randomUUID();
+    this.sessions.set(newSessionId, {
+      messages: [
+        { role: 'system', content: generateCode },
+      ],
+      lastActivity: new Date(),
+    });
+    return { sessionId: newSessionId, isNew: true };
+  }
 
-    return this.openai.chat.completions.create({
-      messages,
+  async completion(prompt: string, sessionId?: string) {
+    const { sessionId: activeSessionId, isNew } = this.getSession(sessionId);
+    const session = this.sessions.get(activeSessionId)!;
+    
+    session.messages.push({ role: 'user', content: prompt });
+    session.lastActivity = new Date();
+
+    const response = await this.openai.chat.completions.create({
+      messages: session.messages,
       model: 'gpt-4',
       stream: true,
       temperature: 0.7,
       presence_penalty: 0.6,
+      tools: [placeOrderTool],
+      tool_choice: 'auto'
     });
+
+    return { response, sessionId: activeSessionId, isNew };
   }
 
   getStats() {

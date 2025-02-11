@@ -11,19 +11,48 @@ export class AppController {
     return this.openaiService.getStats();
   }
 
-  private async streamResponse(prompt: string, systemPrompt: string, res: Response) {
+  private isJsonString(str: string): boolean {
+    try {
+      JSON.parse(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  private async streamResponse(prompt: string, sessionId: string | undefined, res: Response) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
     try {
-      const stream = await this.openaiService.completion(prompt, systemPrompt);
+      const { response: stream, sessionId: activeSessionId, isNew } = await this.openaiService.completion(prompt, sessionId);
       
+      let buffer = '';
+      let isBuffering = false;
+
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content;
         if (content) {
-          res.write(content);
+          if (!isBuffering && content.includes('[[[')) {
+            isBuffering = true;
+          }
+          
+          if (isBuffering) {
+            buffer += content;
+            if (content.includes(']]]')) {
+              res.write(buffer);
+              buffer = '';
+              isBuffering = false;
+            }
+          } else {
+            res.write(content);
+          }
         }
+      }
+
+      if (isNew) {
+        res.write(`[[[${JSON.stringify({ type: "session", sessionId: activeSessionId })}]]]\n`);
       }
       res.end();
     } catch (error: any) {
@@ -34,28 +63,13 @@ export class AppController {
   }
 
   @Post('completion')
-  async getCompletion(@Body() body: { prompt: string }, @Res() res: Response) {
+  async getCompletion(
+    @Body() body: { prompt: string; sessionId?: string },
+    @Res() res: Response
+  ) {
     return this.streamResponse(
       body.prompt,
-      'You are a helpful AI assistant. Respond in a clear and concise manner.',
-      res
-    );
-  }
-
-  @Post('search')
-  async getSearch(@Body() body: { prompt: string }, @Res() res: Response) {
-    return this.streamResponse(
-      body.prompt,
-      'You are a search assistant. Focus on finding and presenting relevant information from the web. Format your response with clear sections and bullet points when appropriate.',
-      res
-    );
-  }
-
-  @Post('reason')
-  async getReason(@Body() body: { prompt: string }, @Res() res: Response) {
-    return this.streamResponse(
-      body.prompt,
-      'You are a reasoning assistant. Break down complex problems and explain your thought process step by step. Consider multiple perspectives and provide detailed analysis.',
+      body.sessionId,
       res
     );
   }

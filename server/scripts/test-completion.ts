@@ -4,7 +4,13 @@ async function main() {
   const service = new OpenAIService();
   
   // Example prompt
-  const prompt = process.argv[2] || 'I want to place a order';
+  const prompt = process.argv[2] || `
+  I have 200$ in my account.
+  AAPL market_price is 140.
+  MSFT market_price is 180.
+  TLSA market_price is 120.
+  I want to place a order
+  `;
   
   try {
     const { response, sessionId } = await service.completion(prompt);

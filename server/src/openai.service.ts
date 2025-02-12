@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { randomUUID } from 'crypto';
-import {  generateCode } from './systemPrompts';
+import {  generateCode, knownAssets } from './systemPrompts';
 import { placeOrderTool } from './tools/placeOrder.tool';
 
 type Message = OpenAI.Chat.ChatCompletionMessageParam;
@@ -31,6 +31,7 @@ export class OpenAIService {
     this.sessions.set(newSessionId, {
       messages: [
         { role: 'system', content: generateCode },
+        { role: 'system', content: knownAssets },
       ],
       lastActivity: new Date(),
     });

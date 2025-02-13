@@ -11,15 +11,6 @@ export class AppController {
     return this.openaiService.getStats();
   }
 
-  private isJsonString(str: string): boolean {
-    try {
-      JSON.parse(str);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
   private async streamResponse(prompt: string, sessionId: string | undefined, res: Response) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -28,26 +19,10 @@ export class AppController {
     try {
       const { response: stream, sessionId: activeSessionId, isNew } = await this.openaiService.completion(prompt, sessionId);
       
-      let buffer = '';
-      let isBuffering = false;
-
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content;
         if (content) {
-          if (!isBuffering && content.includes('[[[')) {
-            isBuffering = true;
-          }
-          
-          if (isBuffering) {
-            buffer += content;
-            if (content.includes(']]]')) {
-              res.write(buffer);
-              buffer = '';
-              isBuffering = false;
-            }
-          } else {
-            res.write(content);
-          }
+          res.write(content);
         }
       }
 

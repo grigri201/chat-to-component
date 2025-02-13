@@ -2,6 +2,9 @@ import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 import { useState } from "react";
 import * as api from "../lib/api";
+import { storage } from "@/lib/storage";
+import { CompletionMessage, Message } from "@/lib/chunk-formatter";
+import { MessageItem } from "@/components/MessageItem";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export default function Home() {
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,26 +26,47 @@ export default function Home() {
     if (!prompt.trim() || isLoading) return;
 
     setIsLoading(true);
-    let currentResponse = "";
+    let currentResponse: CompletionMessage = { type: "completion", text: "" };
 
     try {
       await api.getCompletion(
         prompt,
-        (chunk) => {
-          currentResponse += chunk;
-          setMessages(prev => [...prev.slice(0, -1), currentResponse]);
+        (messages: Message[]) => {
+          for (const message of messages) {
+            if (message.type === "completion") {
+              currentResponse.text += message.text;
+              setMessages((prev) => [...prev.slice(0, -1), currentResponse]);
+            } else if (message.type === "session") {
+              storage.setSessionId(message.sessionId);
+            } else if (message.type === "react") {
+              // Save current completion response if it exists
+              if (currentResponse.text) {
+                setMessages((prev) => [...prev, currentResponse]);
+              }
+              // Add react message
+              setMessages((prev) => [...prev, message]);
+              // Reset currentResponse
+              currentResponse = { type: "completion", text: "" };
+            }
+          }
         },
         (error) => {
           console.error("Error:", error);
-          setMessages(prev => [...prev, `Error: ${error.message}`]);
-        }
+          setMessages((prev) => [
+            ...prev,
+            { type: "error", text: `Error: ${error.message}` },
+          ]);
+        },
+        storage.getSessionId()
       );
     } finally {
       setIsLoading(false);
       setPrompt("");
+      // Add any remaining completion response
+      if (currentResponse.text) {
+        setMessages((prev) => [...prev.slice(0, -1), currentResponse]);
+      }
     }
-
-    setMessages(prev => [...prev, currentResponse]);
   };
 
   return (
@@ -61,17 +85,12 @@ export default function Home() {
             priority
           />
         </div>
-        
+
         {/* Right side - Chat history */}
         <div className="w-[80%] p-4 overflow-y-auto">
           <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div 
-                key={index}
-                className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 whitespace-pre-wrap font-[family-name:var(--font-geist-mono)]"
-              >
-                {message}
-              </div>
+            {messages.map((message: Message, index) => (
+              <MessageItem key={index} message={message} />
             ))}
           </div>
         </div>

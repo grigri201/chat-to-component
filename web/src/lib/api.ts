@@ -2,7 +2,7 @@
  * API client for interacting with the server endpoints
  */
 
-import { messageHandler } from "./message-handler";
+import { chunkFormatter, Message } from "./chunk-formatter";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -12,7 +12,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 async function streamResponse(
   prompt: string,
   onChunk: (chunk: string) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
+  sessionId?: string,
 ) {
   try {
     const response = await fetch(`${API_BASE_URL}/completion`, {
@@ -20,7 +21,7 @@ async function streamResponse(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, sessionId }),
     });
 
     if (!response.ok) {
@@ -65,22 +66,14 @@ export function parseJsonContent(content: string): any | null {
  */
 export function getCompletion(
   prompt: string,
-  onChunk: (chunk: string) => void,
-  onError: (error: Error) => void
+  onChunk: (messages: Message[]) => void,
+  onError: (error: Error) => void,
+  sessionId?: string,
 ): Promise<void> {
   return streamResponse(prompt, (chunk: string) => {
-    console.log({
-      chunk
-    })
-    if (chunk.includes('[[[')) {
-      const jsonContent = parseJsonContent(chunk);
-      if (jsonContent) {
-        messageHandler.handleMessageChunk(jsonContent);
-        return;
-      }
-    }
-    onChunk(chunk);
-  }, onError);
+    const messages = chunkFormatter.handleChunk(chunk);
+    onChunk(messages);
+  }, onError, sessionId);
 }
 
 /**

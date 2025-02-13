@@ -40,6 +40,7 @@ export class OpenAIService {
 
   async completion(prompt: string, sessionId?: string) {
     const { sessionId: activeSessionId, isNew } = this.getSession(sessionId);
+    console.log("isNew:", isNew)
     const session = this.sessions.get(activeSessionId)!;
     
     session.messages.push({ role: 'user', content: prompt });
@@ -49,7 +50,7 @@ export class OpenAIService {
       messages: session.messages,
       model: 'gpt-4',
       stream: true,
-      temperature: 0.7,
+      temperature: 0.2,
       presence_penalty: 0.6,
       tools: [placeOrderTool],
       tool_choice: 'auto'

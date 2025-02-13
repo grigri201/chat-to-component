@@ -5,7 +5,7 @@ async function main() {
   
   // Example prompt
   const prompt = process.argv[2] || `
-  I have 200$ in my account.
+  I have 340$ in my account.
   AAPL market_price is 140.
   MSFT market_price is 180.
   TLSA market_price is 120.

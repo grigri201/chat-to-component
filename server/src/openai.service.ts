@@ -40,7 +40,6 @@ export class OpenAIService {
 
   async completion(prompt: string, sessionId?: string) {
     const { sessionId: activeSessionId, isNew } = this.getSession(sessionId);
-    console.log("isNew:", isNew)
     const session = this.sessions.get(activeSessionId)!;
     
     session.messages.push({ role: 'user', content: prompt });

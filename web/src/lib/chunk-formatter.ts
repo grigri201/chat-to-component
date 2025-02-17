@@ -43,7 +43,6 @@ export class ChunkFormatter {
     const startMarker = '[[[';
     const endMarker = ']]]';
     const messages: Message[] = [];
-    console.log("isBuffering:", this.isBuffering);
 
     // If we're not buffering, check for completion message before any markers
     if (!this.isBuffering) {
@@ -68,8 +67,6 @@ export class ChunkFormatter {
     }
 
     // Start buffering if we find the start marker
-    console.log("chunk:", chunk);
-    console.log("startMarker:", chunk.includes(startMarker))
     if (chunk.includes(startMarker) && !this.isBuffering) {
       this.isBuffering = true;
       this.buffer = chunk.substring(chunk.indexOf(startMarker) + startMarker.length);

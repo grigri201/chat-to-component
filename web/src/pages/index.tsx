@@ -39,6 +39,9 @@ export default function Home() {
             } else if (message.type === "session") {
               storage.setSessionId(message.sessionId);
             } else if (message.type === "react") {
+              console.log({
+                message
+              })
               // Save current completion response if it exists
               if (currentResponse.text) {
                 setMessages((prev) => [...prev, currentResponse]);

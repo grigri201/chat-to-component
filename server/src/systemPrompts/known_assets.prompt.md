@@ -1,11 +1,17 @@
 # Known Assets
 
-- AAPL: AAPLLLLLL1
-- MSFT: MSFTTTTTT2
-- TLSA: TLSAAAAAA3
-
-# Market Price
-
-- AAPL: 140
-- MSFT: 180
-- TLSA: 200
+[{
+    "asset_address": "AAPLLLLLL1",
+    "asset_symbol": "AAPL",
+    "market_price": 140
+},
+{
+    "asset_address": "MSFTTTTTT2",
+    "asset_symbol": "MSFT",
+    "market_price": 180
+},
+{
+    "asset_address": "TLSAAAAAA3",
+    "asset_symbol": "TLSA",
+    "market_price": 200
+}]

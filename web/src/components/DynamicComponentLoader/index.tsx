@@ -1,24 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { transform } from "@babel/standalone";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PlaceOrder } from "../form/PlaceOrder";
 
 export default function DynamicComponentLoader({
   code,
@@ -33,21 +15,7 @@ export default function DynamicComponentLoader({
 
   // 创建依赖映射
   const dependencies = {
-    Card,
-    CardHeader,
-    Select,
-    SelectTrigger,
-    SelectValue,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    Label,
-    Input,
-    Button,
-    CardContent,
-    CardFooter,
-    CardTitle,
+    PlaceOrder
   };
 
   useEffect(() => {

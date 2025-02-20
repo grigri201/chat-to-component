@@ -1,25 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import OpenAI from 'openai';
 import { randomUUID } from 'crypto';
-import {  generateCode, knownAssets } from './systemPrompts';
-import { placeOrderTool } from './tools/placeOrder.tool';
+import { OpenAIClient } from '~/core/llm/openai/openaiClient';
+import { generateCode, knownAssets } from '~/config/prompts';
+import type { Session, Message, ChatResponse } from '~/core/llm/openai/types';
 
-type Message = OpenAI.Chat.ChatCompletionMessageParam;
-
-interface Session {
-  messages: Message[];
-  lastActivity: Date;
-}
-
-@Injectable()
-export class OpenAIService {
-  private openai: OpenAI;
+export class ChatService {
+  private openaiClient: OpenAIClient;
   private sessions: Map<string, Session>;
 
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    this.openaiClient = new OpenAIClient();
     this.sessions = new Map();
   }
 
@@ -38,22 +27,14 @@ export class OpenAIService {
     return { sessionId: newSessionId, isNew: true };
   }
 
-  async completion(prompt: string, sessionId?: string) {
+  async completion(prompt: string, sessionId?: string): Promise<ChatResponse> {
     const { sessionId: activeSessionId, isNew } = this.getSession(sessionId);
     const session = this.sessions.get(activeSessionId)!;
     
     session.messages.push({ role: 'user', content: prompt });
     session.lastActivity = new Date();
 
-    const response = await this.openai.chat.completions.create({
-      messages: session.messages,
-      model: 'gpt-4',
-      stream: true,
-      temperature: 0.2,
-      presence_penalty: 0.6,
-      tools: [placeOrderTool],
-      tool_choice: 'auto'
-    });
+    const response = await this.openaiClient.createChatCompletion(session.messages);
 
     return { response, sessionId: activeSessionId, isNew };
   }
@@ -62,6 +43,17 @@ export class OpenAIService {
     return {
       status: 'healthy',
       timestamp: new Date().toISOString(),
+      activeSessions: this.sessions.size
     };
+  }
+
+  // 清理过期会话
+  cleanupSessions(maxAge: number = 1000 * 60 * 60) { // 默认1小时过期
+    const now = new Date();
+    for (const [sessionId, session] of this.sessions.entries()) {
+      if (now.getTime() - session.lastActivity.getTime() > maxAge) {
+        this.sessions.delete(sessionId);
+      }
+    }
   }
 }

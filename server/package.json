@@ -2,9 +2,12 @@
   "name": "server",
   "module": "index.ts",
   "type": "module",
+  "imports": {
+    "~/*": "./src/*"
+  },
   "scripts": {
-    "dev": "bun run --watch src/main.ts",
-    "build": "bun build src/main.ts --target node --outdir dist",
+    "dev": "bun --bun run --watch src/main.ts",
+    "build": "bun --bun build src/main.ts --target node --outdir dist",
     "start": "bun run dist/main.js",
     "test": "vitest"
   },
@@ -17,10 +20,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@nestjs/common": "^11.0.8",
-    "@nestjs/core": "^11.0.8",
-    "@nestjs/platform-express": "^11.0.8",
-    "openai": "^4.83.0",
-    "reflect-metadata": "^0.2.2"
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "openai": "^4.83.0"
   }
 }

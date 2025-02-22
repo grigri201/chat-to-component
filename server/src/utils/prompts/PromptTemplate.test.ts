@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { PromptTemplate } from "./PromptTemplate";
+import { PromptTemplate } from ".";
 
 describe("PromptTemplate", () => {
   // 基本功能测试

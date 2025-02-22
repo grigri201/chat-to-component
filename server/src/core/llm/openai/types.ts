@@ -9,6 +9,4 @@ export interface Session {
 
 export interface ChatResponse {
   response: AsyncIterable<OpenAI.Chat.ChatCompletionChunk>;
-  sessionId: string;
-  isNew: boolean;
 }

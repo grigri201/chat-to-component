@@ -1,7 +1,8 @@
-import { OpenAIService } from '../src/openai.service';
+
+import { ChatService } from '../src/api/services/chat.service';
 
 async function main() {
-  const service = new OpenAIService();
+  const service = new ChatService();
   
   // Example prompt
   const prompt = process.argv[2] || `
@@ -9,7 +10,7 @@ async function main() {
   `;
   
   try {
-    const { response, sessionId } = await service.completion(prompt);
+    const { response } = await service.completion(prompt, { walletAddress: '0xTestWallet' });
     
     // Handle streaming response
     for await (const chunk of response) {
@@ -17,7 +18,6 @@ async function main() {
         process.stdout.write(chunk.choices[0].delta.content);
       }
     }
-    console.log('\n\nSession ID:', sessionId);
   } catch (error) {
     console.error('Error:', error);
   }

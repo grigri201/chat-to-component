@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { parsePartialJson } from "./parsePartialJson";
+import { parsePartialJson } from ".";
 
 describe("parsePartialJson", () => {
     test("should parse valid JSON correctly", () => {

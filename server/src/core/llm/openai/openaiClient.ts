@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import type { Stream } from 'openai/streaming.mjs';
 import { placeOrderTool } from '~/tools/code/placeOrder.tool';
 
 export class OpenAIClient {
@@ -8,7 +9,9 @@ export class OpenAIClient {
     this.client = new OpenAI({ apiKey });
   }
 
-  async createChatCompletion(messages: OpenAI.Chat.ChatCompletionMessageParam[]) {
+  async createChatCompletion(messages: OpenAI.Chat.ChatCompletionMessageParam[]):Promise<Stream<OpenAI.Chat.Completions.ChatCompletionChunk> & {
+    _request_id?: string | null;
+}> {
     return this.client.chat.completions.create({
       messages,
       model: 'gpt-4',

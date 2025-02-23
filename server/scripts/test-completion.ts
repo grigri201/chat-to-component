@@ -1,8 +1,7 @@
-
-import { ChatService } from '../src/api/services/chat.service';
+import { ChatService } from "~/api/chat/chat.service";
 
 async function main() {
-  const service = new ChatService();
+  const service = ChatService.getInstance();
   
   // Example prompt
   const prompt = process.argv[2] || `

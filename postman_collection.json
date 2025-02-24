@@ -1,0 +1,117 @@
+{
+  "info": {
+    "name": "Message to Component API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Generate Nonce",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/nonce",
+              "path": ["auth", "nonce"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"walletAddress\": \"0x...\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Validate Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/validate",
+              "path": ["auth", "validate"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"your-session-token\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Asset Analysis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/asset-analysis/{{assetAddress}}",
+              "path": ["chat", "asset-analysis", "{{assetAddress}}"]
+            }
+          }
+        },
+        {
+          "name": "Portfolio Analysis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/portfolio-analysis",
+              "path": ["chat", "portfolio-analysis"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/cancel-order",
+              "path": ["chat", "cancel-order"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}

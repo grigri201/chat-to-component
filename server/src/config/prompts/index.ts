@@ -1,4 +1,5 @@
 import { loadPrompt } from './utils';
 
-export const generateCode = loadPrompt('generate_code');
-export const knownAssets = loadPrompt('known_assets');
+export const basePrompt = loadPrompt('base');
+export const hiPrompt = loadPrompt('hi');
+export const knownAssets = loadPrompt('knownAssets');

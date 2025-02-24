@@ -19,10 +19,23 @@ export class AuthService {
   private sessions: Map<string, Session>;
   private static readonly NONCE_EXPIRY_MS = 30000; // 30 seconds
 
+  // Test session constants
+  public static readonly TEST_WALLET = '5ZWj7a1f8tWkjBESHKgrLmXshuXxqeY9SYcfbshpAqPG';
+  public static readonly TEST_TOKEN = 'test_session_token_for_development';
+  private static readonly TEST_SESSION: Session = {
+    walletAddress: AuthService.TEST_WALLET,
+    token: AuthService.TEST_TOKEN,
+    expiresAt: new Date('2099-12-31') // Far future date for testing
+  };
+
   private constructor() {
     this.nonceStore = new Map<string, NonceData>();
     this.sessions = new Map<string, Session>();
     logger.info('AuthService initialized');
+
+    // Initialize test session
+    this.sessions.set(AuthService.TEST_TOKEN, AuthService.TEST_SESSION);
+    logger.info('Test session initialized');
 
     // Start cleanup interval for expired nonces
     setInterval(() => this.cleanupExpiredNonces(), 5000); // Run cleanup every 5 seconds
@@ -47,8 +60,8 @@ export class AuthService {
 
   public validateAddress(address: string): boolean {
     try {
-      // Simple validation - check if it's a hex string
-      return /^0x[a-fA-F0-9]{40}$/.test(address);
+      // Validate Solana public key format (Base58 string, typically 32-44 characters)
+      return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
     } catch {
       return false;
     }

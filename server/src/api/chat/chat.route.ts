@@ -18,6 +18,7 @@ const handleStreamResponse = async (stream: any, res: Response) => {
   try {
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
+      console.log("content: ", content)
       if (content) {
         res.write(content);
       }

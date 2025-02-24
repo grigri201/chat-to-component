@@ -3,8 +3,8 @@ import { AuthService } from './auth.service';
 import * as nacl from 'tweetnacl';
 
 describe('AuthService', () => {
-  const validWalletAddress = '0x1234567890123456789012345678901234567890';
-  const invalidWalletAddress = '0xInvalid';
+  const validWalletAddress = '5ZWj7a1f8tWkjBESHKgrLmXshuXxqeY9SYcfbshpAqPG';
+  const invalidWalletAddress = 'invalid-solana-address';
   let authService: AuthService;
 
   // 生成一个测试用的密钥对

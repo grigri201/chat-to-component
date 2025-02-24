@@ -1,5 +1,5 @@
 import { OpenAIClient } from '~/core/llm/openai/openaiClient';
-import { generateCode, knownAssets } from '~/config/prompts';
+import { basePrompt, hiPrompt, knownAssets } from '~/config/prompts';
 import type { Session, ChatResponse } from '~/core/llm/openai/types';
 import logger from '~/utils/logger';
 import { parsePartialJson } from '~/utils/parsePartialJson';
@@ -33,7 +33,7 @@ export class ChatService {
     if (!this.sessions.has(user.walletAddress)) {
       this.sessions.set(user.walletAddress, {
         messages: [
-          { role: 'system', content: generateCode },
+          { role: 'system', content: basePrompt },
           { role: 'system', content: knownAssets },
         ],
         lastActivity: new Date(),
@@ -48,14 +48,13 @@ export class ChatService {
     
     if (!lastGreeting || (now.getTime() - lastGreeting.getTime() > this.GREETING_INTERVAL)) {
       const session = this.getSession(user);
-      const greeting = `Hi! It's ${now.toLocaleTimeString()}. How can I help you today?`;
-      
-      session.messages.push({ role: 'assistant', content: greeting });
+      session.messages.push({ role: 'system', content: basePrompt });
+      session.messages.push({ role: 'system', content: hiPrompt });
       session.lastActivity = now;
       this.lastGreetings.set(user.walletAddress, now);
       
       logger.info(`Sent greeting to user: ${user.walletAddress}`);
-      const stream = await this.openaiClient.createChatCompletion([{ role: 'assistant', content: greeting }]);
+      const stream = await this.openaiClient.createChatCompletion(session.messages);
       return { response: stream };
     }
     

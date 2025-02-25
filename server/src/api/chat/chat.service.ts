@@ -1,9 +1,10 @@
 import { OpenAIClient } from '~/core/llm/openai/openaiClient';
-import { basePrompt, hiPrompt, knownAssets } from '~/config/prompts';
+import { assetOverviewPrompt, basePrompt, hiPrompt, knownAssets } from '~/config/prompts';
 import type { Session, ChatResponse } from '~/core/llm/openai/types';
 import logger from '~/utils/logger';
 import { parsePartialJson } from '~/utils/parsePartialJson';
 import type OpenAI from 'openai';
+import { PriceModel, type Price } from '~/core/db/models/price.model';
 
 interface User {
   walletAddress: string;
@@ -123,68 +124,7 @@ export class ChatService {
     return { response: processStream(stream) };
   }
 
-  async assetOverview(assetAddress: string, user: User): Promise<ChatResponse> {
-    const session = this.getSession(user);
-    const prompt = `Please analyze the asset at address ${assetAddress}`;
-    
-    session.messages.push({ role: 'user', content: prompt });
-    session.lastActivity = new Date();
 
-    logger.info(`Analyzing asset ${assetAddress} for user: ${user.walletAddress}`);
-    const stream = await this.openaiClient.createChatCompletion(session.messages);
-    
-    const processStream = async function* (stream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>) {
-      let buffer = '';
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        buffer += content;
-        
-        if (buffer.includes('{')) {
-          try {
-            const parsedJson = parsePartialJson(buffer);
-            if (parsedJson) {
-              yield {
-                ...chunk,
-                choices: [{
-                  ...chunk.choices[0],
-                  delta: { content: JSON.stringify(parsedJson, null, 2) }
-                }]
-              };
-              buffer = ''; // Reset buffer after successful JSON parse
-              continue;
-            }
-          } catch {}
-        }
-        
-        if (content) {
-          yield chunk;
-        }
-      }
-      
-      // Process any remaining content in buffer
-      if (buffer) {
-        try {
-          const parsedJson = parsePartialJson(buffer);
-          if (parsedJson) {
-            const finalChunk: OpenAI.Chat.Completions.ChatCompletionChunk = {
-              id: 'chatcmpl-final',
-              object: 'chat.completion.chunk',
-              created: Math.floor(Date.now() / 1000),
-              model: 'gpt-4',
-              choices: [{
-                index: 0,
-                delta: { content: JSON.stringify(parsedJson, null, 2) },
-                finish_reason: null
-              }]
-            };
-            yield finalChunk;
-          }
-        } catch {}
-      }
-    };
-
-    return { response: processStream(stream) };
-  }
 
   async analyzePortfolio(user: User): Promise<ChatResponse> {
     const session = this.getSession(user);

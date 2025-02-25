@@ -65,24 +65,6 @@ router.post('/completion', authenticateWallet, async (req: Request, res: Respons
   }
 });
 
-// 资产分析
-router.get('/asset-overview/:assetAddress', authenticateWallet, async (req: Request, res: Response) => {
-  const { assetAddress } = req.params;
-  if (!assetAddress) {
-    res.status(400).json({ error: 'Asset address is required' });
-    return;
-  }
-
-  setSSEHeaders(res);
-  try {
-    const { response: stream } = await chatService.assetOverview(assetAddress, req.user!);
-    await handleStreamResponse(stream, res);
-  } catch (error: any) {
-    logger.error('Error in asset overview endpoint:', error);
-    res.status(500).send({ error: error.message });
-  }
-});
-
 // 投资组合分析
 router.get('/portfolio-analysis', authenticateWallet, async (req: Request, res: Response) => {
   setSSEHeaders(res);

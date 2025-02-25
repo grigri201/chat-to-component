@@ -49,12 +49,11 @@ export class ChatService {
     if (!lastGreeting || (now.getTime() - lastGreeting.getTime() > this.GREETING_INTERVAL)) {
       const session = this.getSession(user);
       session.messages.push({ role: 'system', content: basePrompt });
-      session.messages.push({ role: 'system', content: hiPrompt });
       session.lastActivity = now;
       this.lastGreetings.set(user.walletAddress, now);
       
       logger.info(`Sent greeting to user: ${user.walletAddress}`);
-      const stream = await this.openaiClient.createChatCompletion(session.messages);
+      const stream = await this.openaiClient.createChatCompletion([...session.messages, { role: 'system', content: hiPrompt }]);
       return { response: stream };
     }
     
@@ -124,7 +123,7 @@ export class ChatService {
     return { response: processStream(stream) };
   }
 
-  async analyzeAsset(assetAddress: string, user: User): Promise<ChatResponse> {
+  async assetOverview(assetAddress: string, user: User): Promise<ChatResponse> {
     const session = this.getSession(user);
     const prompt = `Please analyze the asset at address ${assetAddress}`;
     

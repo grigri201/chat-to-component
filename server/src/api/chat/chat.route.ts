@@ -66,7 +66,7 @@ router.post('/completion', authenticateWallet, async (req: Request, res: Respons
 });
 
 // 资产分析
-router.get('/asset-analysis/:assetAddress', authenticateWallet, async (req: Request, res: Response) => {
+router.get('/asset-overview/:assetAddress', authenticateWallet, async (req: Request, res: Response) => {
   const { assetAddress } = req.params;
   if (!assetAddress) {
     res.status(400).json({ error: 'Asset address is required' });
@@ -75,10 +75,10 @@ router.get('/asset-analysis/:assetAddress', authenticateWallet, async (req: Requ
 
   setSSEHeaders(res);
   try {
-    const { response: stream } = await chatService.analyzeAsset(assetAddress, req.user!);
+    const { response: stream } = await chatService.assetOverview(assetAddress, req.user!);
     await handleStreamResponse(stream, res);
   } catch (error: any) {
-    logger.error('Error in asset analysis endpoint:', error);
+    logger.error('Error in asset overview endpoint:', error);
     res.status(500).send({ error: error.message });
   }
 });

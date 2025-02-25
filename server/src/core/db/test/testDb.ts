@@ -25,6 +25,7 @@ export class TestDB extends BaseDB {
             await this.run('DROP TABLE IF EXISTS balances;');
             await this.run('DROP TABLE IF EXISTS orders;');
             await this.run('DROP TABLE IF EXISTS users;');
+            await this.run('DROP TABLE IF EXISTS prices;');
 
             // Create tables
             await this.run(`
@@ -60,6 +61,15 @@ export class TestDB extends BaseDB {
                     UNIQUE(wallet_address, asset_address)
                 );
             `);
+
+            await this.run(`
+                CREATE TABLE IF NOT EXISTS prices (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    asset_address TEXT NOT NULL,
+                    price TEXT NOT NULL,
+                    time TEXT NOT NULL
+                );
+            `);
             await this.run('COMMIT;');
         } catch (err) {
             await this.run('ROLLBACK;');
@@ -73,6 +83,7 @@ export class TestDB extends BaseDB {
             await this.run('DELETE FROM balances;');
             await this.run('DELETE FROM orders;');
             await this.run('DELETE FROM users;');
+            await this.run('DELETE FROM prices;');
             await this.run('COMMIT;');
         } catch (err) {
             await this.run('ROLLBACK;');

@@ -31,6 +31,18 @@ export class OrderModel extends BaseDB {
         return OrderModel.instance;
     }
 
+    async getOpenOrdersByType(walletAddress: string, orderType: string): Promise<Order[]> {
+        const orders = await this.all<Order>(
+            `SELECT * FROM orders 
+            WHERE wallet_address = ? 
+            AND order_type = ? 
+            AND status = 'open'
+            ORDER BY created_at DESC`,
+            [walletAddress, orderType]
+        );
+        return orders;
+    }
+
     async create(order: Omit<Order, 'id' | 'created_at' | 'updated_at'>): Promise<Order | undefined> {
         const result = await this.run(
             `INSERT INTO orders (

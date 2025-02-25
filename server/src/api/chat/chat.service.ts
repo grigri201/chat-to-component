@@ -124,8 +124,6 @@ export class ChatService {
     return { response: processStream(stream) };
   }
 
-
-
   async analyzePortfolio(user: User): Promise<ChatResponse> {
     const session = this.getSession(user);
     const prompt = `Please analyze the portfolio for wallet ${user.walletAddress}`;

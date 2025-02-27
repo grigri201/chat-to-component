@@ -7,9 +7,9 @@ async function insertTestData() {
 
     // Test data for prices
     const testAssets = [
-        'AAPLAPPLAAPLAPPLAAPLAPPLAAPLAPPLAAPLAPPL', // AAPL
-        'TSLATSLATSLATSLATSLATSLATSLATSLATSLATSLA', // TSLA
-        'MISTMISTMISTMISTMISTMISTMISTMISTMISTMIST', // MIST
+        'AAPLLLLLL1', // AAPL
+        'MSFTTTTTT2', // MSFT
+        'TLSAAAAAA3', // TLSA
     ];
 
     // Insert price data for the last 7 days

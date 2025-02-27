@@ -1,10 +1,11 @@
 import { OpenAIClient } from '~/core/llm/openai/openaiClient';
-import { assetOverviewPrompt, basePrompt, hiPrompt, knownAssets } from '~/config/prompts';
+import { basePrompt, hiPrompt } from '~/config/prompts';
 import type { Session, ChatResponse } from '~/core/llm/openai/types';
 import logger from '~/utils/logger';
 import { parsePartialJson } from '~/utils/parsePartialJson';
 import type OpenAI from 'openai';
 import { PriceModel, type Price } from '~/core/db/models/price.model';
+import { OrderModel } from '~/core/db/models/order.model';
 
 interface User {
   walletAddress: string;
@@ -35,7 +36,6 @@ export class ChatService {
       this.sessions.set(user.walletAddress, {
         messages: [
           { role: 'system', content: basePrompt },
-          { role: 'system', content: knownAssets },
         ],
         lastActivity: new Date(),
       });
@@ -46,14 +46,51 @@ export class ChatService {
   async sayHi(user: User): Promise<ChatResponse> {
     const now = new Date();
     const lastGreeting = this.lastGreetings.get(user.walletAddress);
+
+    const testAssets = [{
+      address: 'AAPLLLLLL1', // AAPL
+      symbol: 'AAPL',
+    },
+    {
+      address: 'MSFTTTTTT2', // MSFT
+      symbol: 'MSFT',
+    },
+    {
+      address: 'TLSAAAAAA3', // TLSA
+      symbol: 'TLSA',
+    }];
     
     if (!lastGreeting || (now.getTime() - lastGreeting.getTime() > this.GREETING_INTERVAL)) {
       const session = this.getSession(user);
+      
+      // Get user's orders
+      const orderModel = OrderModel.getInstance();
+      const orders = await orderModel.findByWalletAddress(user.walletAddress);
+      
+      // Get latest prices for all known assets
+      const priceModel = PriceModel.getInstance();
+      const pricePromises = testAssets.map(asset => priceModel.findByAssetAddress(asset.address, 2));
+      const priceResults = await Promise.all(pricePromises);
+      const prices = priceResults.reduce((acc, prices, index) => {
+        if (prices.length > 0) {
+          acc[testAssets[index].symbol] = prices.map(p => p.price);
+        }
+        return acc;
+      }, {} as Record<string, string[]>);
+
       session.messages.push({ role: 'system', content: basePrompt });
+      session.messages.push({ 
+        role: 'system', 
+        content: `User has ${orders.length} orders in total. Current orders: ${JSON.stringify(orders)}` 
+      });
+      session.messages.push({
+        role: 'system',
+        content: `Latest market prices: ${JSON.stringify(prices)}`
+      });
       session.lastActivity = now;
       this.lastGreetings.set(user.walletAddress, now);
       
-      logger.info(`Sent greeting to user: ${user.walletAddress}`);
+      logger.info(`Sent greeting to user: ${user.walletAddress} with ${orders.length} orders and ${Object.keys(prices).length} price updates`);
       const stream = await this.openaiClient.createChatCompletion([...session.messages, { role: 'system', content: hiPrompt }]);
       return { response: stream };
     }

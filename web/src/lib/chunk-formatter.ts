@@ -1,120 +1,149 @@
-import { isValidJson, safeJsonParse } from "./json-helper";
+import { parseJsonBlocks } from "./json-helper";
 
-// Message types
-export type MessageType = 'session' | 'react' | 'error' | 'completion';
-
-interface BaseMessage {
-  type: MessageType;
+export interface Message {
+  type: string;
+  text?: string;
+  sessionId?: string;
+  data?: any;
 }
-
-export interface SessionMessage extends BaseMessage {
-  type: 'session';
-  sessionId: string;
-}
-
-export interface ReactMessage extends BaseMessage {
-  type: 'react';
-  code: string;
-}
-
-export interface CompletionMessage extends BaseMessage {
-  type: 'completion';
-  text: string;
-}
-
-export interface ErrorMessage extends BaseMessage {
-  type: 'error';
-  text: string;
-}
-
-export type Message = SessionMessage | ReactMessage | CompletionMessage | ErrorMessage;
-
 /**
  * Handles different types of messages received from the server
  */
 export class ChunkFormatter {
-  private buffer: string = '';
-  private isBuffering: boolean = false;
+  private buffer: string = "";
+  private jsonBuffer: string = "";
+  private isJsonMode: boolean = false;
+  private messages: Message[] = [];
 
   /**
    * Handle incoming message chunk
    */
   handleChunk(chunk: string): Message[] {
-    const startMarker = '[[[';
-    const endMarker = ']]]';
-    const messages: Message[] = [];
-
-    // If we're not buffering, check for completion message before any markers
-    if (!this.isBuffering) {
-      const startIndex = chunk.indexOf(startMarker);
-      if (startIndex > 0) {
-        const completionText = chunk.substring(0, startIndex).trim();
-        if (completionText) {
-          messages.push({
-            type: 'completion',
-            text: completionText
-          });
+    // Handle empty chunk case
+    if (chunk === "") {
+      // Process any remaining JSON buffer
+      if (this.isJsonMode && this.jsonBuffer) {
+        const jsonContent = parseJsonBlocks<Message>(this.jsonBuffer);
+        if (jsonContent !== null) {
+          this.messages.push(jsonContent);
         }
-        // Remove the processed completion part from the chunk
-        chunk = chunk.substring(startIndex);
-      } else if (startIndex === -1) {
-        // No marker found, treat as completion message
-        return [{
-          type: 'completion',
-          text: chunk
-        }];
+        this.isJsonMode = false;
+        this.jsonBuffer = "";
+        this.buffer = "";
+        return this.messages;
       }
-    }
 
-    // Start buffering if we find the start marker
-    if (chunk.includes(startMarker) && !this.isBuffering) {
-      this.isBuffering = true;
-      this.buffer = chunk.substring(chunk.indexOf(startMarker) + startMarker.length);
-      return messages;
-    }
-
-    // If we're buffering, append the chunk
-    if (this.isBuffering) {
-      this.buffer += chunk;
-      
-      // Check if we have the end marker
-      const endIndex = this.buffer.indexOf(endMarker);
-      if (endIndex !== -1) {
-        const content = this.buffer.substring(0, endIndex);
-        this.buffer = '';
-        this.isBuffering = false;
-
-        // Process the buffered content
-        if (isValidJson(content)) {
-          const message = safeJsonParse<Message>(content);
-          if (message) {
-            messages.push(message);
-          }
-        } else {
-          messages.push({
-            type: 'react',
-            code: this.standardizedReactStrings(content)
-          });
-        }
-
-        // Process any remaining content after the end marker
-        const remainingContent = this.buffer.substring(endIndex + endMarker.length);
-        if (remainingContent.trim()) {
-          messages.push({
-            type: 'completion',
-            text: remainingContent.trim()
-          });
-        }
+      // Only process remaining text buffer if we're not in JSON mode and it doesn't contain JSON markers
+      if (
+        !this.isJsonMode &&
+        this.buffer.length > 0 &&
+        !this.buffer.includes("```json")
+      ) {
+        this.messages.push({
+          type: "completion",
+          text: this.buffer,
+        });
+        this.buffer = "";
       }
+
+      return this.messages;
     }
 
-    return messages;
+    // Add chunk to buffer
+    this.buffer += chunk;
+
+    // Process non-empty chunk
+    if (this.isJsonMode) {
+      return this.handleJsonMode();
+    } else {
+      return this.handleRegularMode();
+    }
   }
 
-  private standardizedReactStrings(message: string): string {
-    return message
-      .replace(/\[\[\[|\]\]\]/g, '') // Remove [[[ and ]]] markers
-      .replace(/```jsx\s+|```/g, ''); // Remove ```jsx and ``` markers
+  private handleJsonMode(): Message[] {
+    // Look for the end marker '```' that is not part of '```json'
+    const endMatch = this.buffer.match(/```(?!(json|[a-zA-Z]))/);
+    if (endMatch?.index !== undefined) {
+      // Extract JSON content
+      this.jsonBuffer += this.buffer.substring(0, endMatch.index);
+      // Always reset state and store remaining text
+      this.buffer = this.buffer.substring(endMatch.index + 3);
+      const jsonContent = parseJsonBlocks<Message>(this.jsonBuffer);
+      this.jsonBuffer = "";
+      this.isJsonMode = false;
+      const lastMessage = this.messages[this.messages.length - 1];
+      if (jsonContent !== null) {
+        if (lastMessage.type === "completion") {
+          this.messages.push(jsonContent);
+        } else {
+          this.messages[this.messages.length - 1] = jsonContent;
+        }
+      }
+      return this.messages;
+    }
+    // Only return valid JSON content, otherwise return empty array
+    // Continue buffering JSON content
+    this.jsonBuffer += this.buffer;
+    this.buffer = "";
+    const jsonContent = parseJsonBlocks<Message>(this.jsonBuffer);
+    const lastMessage = this.messages[this.messages.length - 1];
+    if (jsonContent !== null) {
+      if (lastMessage.type === "completion") {
+        this.messages.push(jsonContent);
+      } else {
+        this.messages[this.messages.length - 1] = jsonContent;
+      }
+    }
+    return this.messages;
+  }
+
+  private handleRegularMode(): Message[] {
+    // Check for partial backtick pattern
+    if (this.buffer.endsWith("`")) {
+      return this.messages;
+    }
+
+    const jsonStart = this.buffer.indexOf("```json");
+    if (jsonStart !== -1) {
+      // Handle text before JSON block
+      if (jsonStart > 0) {
+        this.messages.push({
+          type: "completion",
+          text: this.buffer.substring(0, jsonStart),
+        });
+      }
+
+      // Check if we have a complete JSON block
+      // const jsonEnd = this.buffer.indexOf('```', jsonStart + 7);
+      const endMatch = this.buffer.match(/```(?!(json|[a-zA-Z]))/);
+      if (endMatch?.index !== undefined) {
+        const jsonContent = parseJsonBlocks<Message>(
+          this.buffer.substring(jsonStart, endMatch.index)
+        );
+        if (jsonContent !== null) {
+          this.messages.push(jsonContent);
+        }
+        // Process remaining text after JSON block
+        const remainingText = this.buffer.substring(endMatch.index + 3).trim();
+        if (remainingText.length > 0) {
+          this.messages.push({
+            type: "completion",
+            text: remainingText,
+          });
+        }
+        this.buffer = "";
+        return this.messages;
+      }
+
+      // Switch to JSON mode and skip the ```json marker
+      this.buffer = this.buffer.substring(jsonStart); // Skip ```json
+      this.jsonBuffer = "";
+      this.isJsonMode = true;
+      return this.messages;
+    } else {
+      // Keep buffering until we find a JSON block or get an empty chunk
+      return this.messages;
+    }
   }
 }
 

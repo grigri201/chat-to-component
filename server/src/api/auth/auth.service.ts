@@ -20,7 +20,7 @@ export class AuthService {
   private static readonly NONCE_EXPIRY_MS = 30000; // 30 seconds
 
   // Test session constants
-  public static readonly TEST_WALLET = '5ZWj7a1f8tWkjBESHKgrLmXshuXxqeY9SYcfbshpAqPG';
+  public static readonly TEST_WALLET = '4R8HehpFNXQqds4doZGGNAPfpo4AcHZfu4wbtMSsb7iY';
   public static readonly TEST_TOKEN = 'test_session_token_for_development';
   private static readonly TEST_SESSION: Session = {
     walletAddress: AuthService.TEST_WALLET,

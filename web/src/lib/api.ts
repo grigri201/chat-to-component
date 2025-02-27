@@ -9,17 +9,19 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 /**
  * Generic function to handle streaming responses from the server
  */
-async function streamResponse(
+async function completionStreaming(
+  path: string,
   prompt: string,
   onChunk: (chunk: string) => void,
   onError: (error: Error) => void,
   sessionId?: string,
 ) {
   try {
-    const response = await fetch(`${API_BASE_URL}/completion`, {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer test_session_token_for_development`,
       },
       body: JSON.stringify({ prompt, sessionId }),
     });
@@ -41,6 +43,8 @@ async function streamResponse(
       const chunk = decoder.decode(value);
       onChunk(chunk);
     }
+    // send empty string to indicate that the stream is complete
+    onChunk('');
   } catch (error) {
     onError(error instanceof Error ? error : new Error('Unknown error occurred'));
   }
@@ -70,7 +74,7 @@ export function getCompletion(
   onError: (error: Error) => void,
   sessionId?: string,
 ): Promise<void> {
-  return streamResponse(prompt, (chunk: string) => {
+  return completionStreaming('/chat/completion',prompt, (chunk: string) => {
     const messages = chunkFormatter.handleChunk(chunk);
     onChunk(messages);
   }, onError, sessionId);
@@ -89,4 +93,18 @@ export async function getStats(): Promise<any> {
   } catch (error) {
     throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
+}
+
+/**
+ * Say hi to the AI
+ */
+export function sayHi(
+  onChunk: (messages: Message[]) => void,
+  onError: (error: Error) => void,
+  sessionId?: string,
+): Promise<void> {
+  return completionStreaming('/chat/hi', '', (chunk: string) => {
+    const messages = chunkFormatter.handleChunk(chunk);
+    onChunk(messages);
+  }, onError, sessionId);
 }

@@ -1,51 +1,48 @@
 "use client";
 
-import DynamicCodeRenderer from "@/components/DynamicComponentLoader";
+import StockItem, { type Stock } from '@/components/StockItem';
+import PortfolioChart from '@/components/PortfolioChart';
 
 export default function TestPage() {
-//   const code = `function DynamicComp({
-//   eventCallback,
-//   React,
-//   dependencies,
-// }) {
-//   const { PlaceOrder } = dependencies;
-//   const assets = {'AAPLLLLLL1': 'AAPL', 'MSFTTTTTT2': 'MSFT', 'TLSAAAAAA3': 'TLSA'};
-//   const prices = {'AAPL': 140, 'MSFT': 180, 'TLSA': 200};
-//   return <PlaceOrder 
-//   assets={assets}
-//   prices={prices}
-//   balance={100}
-//   eventCallback={(formData) => console.log(formData)}
-//   />
-// }
-// `
-const code = `function DynamicComp({
-  eventCallback,
-  React,
-  dependencies,
-}) {
-  const { PlaceOrder } = dependencies;
-  const assets = {AAPLLLLLL1: "AAPL", MSFTTTTTT2: "MSFT", TLSAAAAAA3: "TLSA"};
-  const prices = {AAPLLLLLL1: 140, MSFTTTTTT2: 180, TLSAAAAAA3: 200};
-  return <PlaceOrder 
-  assets={assets}
-  prices={prices}
-  balance={10000}
-  eventCallback={(formData) => console.log(formData)}
-  />
-}`
+  const stocks: Stock[] = [
+    { symbol: 'AAPL', change: '+2%', description: 'See why AAPL is rising...' },
+    { symbol: 'MSFT', change: '-3%', description: 'See how MSFT has performed...' },
+    { symbol: 'GIKO', change: '+10%', description: 'The best performing assets are...' }
+  ];
+
+  const handleEvent = (event: string) => {
+    console.log(event);
+  };
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-8">Shadcn UI Test Page</h1>
+      <div className="flex flex-col gap-4 p-4 max-w-4xl mx-auto">
+        <div className="grid grid-cols-3 gap-4">
+          {stocks.map(stock => (
+            <StockItem
+              key={stock.symbol}
+              stock={stock}
+              onItemClick={(symbol) => handleEvent('Clicked ' + symbol)}
+            />
+          ))}
+        </div>
 
-      <div className="space-y-8">
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Cards</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <DynamicCodeRenderer code={code} eventCallback={(message: string) => console.log(message)} />
-          </div>
-        </section>
+        <PortfolioChart onDetailsClick={() => handleEvent('View details')} />
+
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            className="p-4 bg-green-500 text-white rounded-lg font-semibold"
+            onClick={() => handleEvent('Buy asset')}
+          >
+            Buy asset
+          </button>
+          <button
+            className="p-4 bg-red-500 text-white rounded-lg font-semibold"
+            onClick={() => handleEvent('Sell asset')}
+          >
+            Sell asset
+          </button>
+        </div>
       </div>
     </div>
   );

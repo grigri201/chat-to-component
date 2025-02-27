@@ -1,4 +1,4 @@
-import { Message, ReactMessage } from "@/lib/chunk-formatter";
+import { Message, AssetsMessage } from "@/lib/chunk-formatter";
 import DynamicCodeRenderer from "@/components/DynamicComponentLoader";
 
 interface MessageItemProps {
@@ -21,7 +21,7 @@ export const MessageItem = ({ message }: MessageItemProps) => {
       return (
         <div className="space-y-4">
           <DynamicCodeRenderer 
-            code={(message as ReactMessage).code} 
+            code={(message as AssetsMessage).code} 
             eventCallback={handleEventCallback} 
           />
         </div>

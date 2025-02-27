@@ -1,10 +1,15 @@
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as api from "../lib/api";
 import { storage } from "@/lib/storage";
-import { CompletionMessage, Message } from "@/lib/chunk-formatter";
+import {
+  CompletionMessage,
+  Message,
+  AssetsMessage,
+} from "@/lib/chunk-formatter";
 import { MessageItem } from "@/components/MessageItem";
+import { parseJsonBlocks } from "@/lib/json-helper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +25,54 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const sayHi = async () => {
+      let currentResponse: CompletionMessage = { type: "completion", text: "" };
+
+      try {
+        await api.sayHi(
+          (messages: Message[]) => {
+            console.log(messages);
+            for (const message of messages) {
+              if (message.type === "completion") {
+                currentResponse.text += message.text;
+                setMessages((prev) => [...prev.slice(0, -1), currentResponse]);
+              } else if (message.type === "session") {
+                storage.setSessionId(message.sessionId);
+              } else {
+                setMessages((prev) => {
+                  const latestMessage = prev[prev.length - 1];
+                  if (
+                    latestMessage.type === "completion" ||
+                    latestMessage.type === "session"
+                  ) {
+                    return [...prev, currentResponse];
+                  } else {
+                    return [...prev.slice(0, -1), currentResponse];
+                  }
+                });
+              }
+            }
+          },
+          (error) => {
+            console.error("Error:", error);
+            setMessages([{ type: "error", text: `Error: ${error.message}` }]);
+          },
+          storage.getSessionId()
+        );
+      } catch (error) {
+        console.error("Error saying hi:", error);
+      } finally {
+        // Add any remaining completion response
+        if (currentResponse.text) {
+          setMessages((prev) => [...prev.slice(0, -1), currentResponse]);
+        }
+      }
+    };
+
+    sayHi();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,18 +91,8 @@ export default function Home() {
               setMessages((prev) => [...prev.slice(0, -1), currentResponse]);
             } else if (message.type === "session") {
               storage.setSessionId(message.sessionId);
-            } else if (message.type === "react") {
-              console.log({
-                message
-              })
-              // Save current completion response if it exists
-              if (currentResponse.text) {
-                setMessages((prev) => [...prev, currentResponse]);
-              }
-              // Add react message
+            } else {
               setMessages((prev) => [...prev, message]);
-              // Reset currentResponse
-              currentResponse = { type: "completion", text: "" };
             }
           }
         },

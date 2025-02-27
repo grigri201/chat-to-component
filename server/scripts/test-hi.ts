@@ -4,7 +4,7 @@ async function main() {
   const service = ChatService.getInstance();
   
   try {
-    const { response } = await service.sayHi({ walletAddress: '0xTestWallet' });
+    const { response } = await service.sayHi({ walletAddress: '4R8HehpFNXQqds4doZGGNAPfpo4AcHZfu4wbtMSsb7iY' });
     
     // Handle streaming response
     for await (const chunk of response) {

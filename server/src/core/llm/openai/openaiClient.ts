@@ -6,7 +6,7 @@ export class OpenAIClient {
   private client: OpenAI;
 
   constructor(apiKey: string = process.env.OPENAI_API_KEY!) {
-    this.client = new OpenAI({ apiKey });
+    this.client = new OpenAI({ baseURL: 'https://api.deepseek.com/v1',apiKey });
   }
 
   async createChatCompletion(messages: OpenAI.Chat.ChatCompletionMessageParam[]):Promise<Stream<OpenAI.Chat.Completions.ChatCompletionChunk> & {
@@ -14,7 +14,7 @@ export class OpenAIClient {
 }> {
     return this.client.chat.completions.create({
       messages,
-      model: 'gpt-4',
+      model: 'deepseek-chat',
       stream: true,
       temperature: 0.2,
       presence_penalty: 0.6,

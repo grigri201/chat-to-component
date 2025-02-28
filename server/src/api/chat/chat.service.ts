@@ -6,6 +6,7 @@ import { parsePartialJson } from '~/utils/parsePartialJson';
 import type OpenAI from 'openai';
 import { PriceModel, type Price } from '~/core/db/models/price.model';
 import { OrderModel } from '~/core/db/models/order.model';
+import { BalanceModel } from '~/core/db/models/balance.model';
 
 interface User {
   walletAddress: string;
@@ -78,6 +79,12 @@ export class ChatService {
         return acc;
       }, {} as Record<string, string[]>);
 
+      // Get user's balance history for the past 7 days
+      const balanceModel = BalanceModel.getInstance();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+      const balances = await balanceModel.getAllBalances(user.walletAddress, startDate, now);
+
       session.messages.push({ role: 'system', content: basePrompt });
       session.messages.push({ 
         role: 'system', 
@@ -86,6 +93,10 @@ export class ChatService {
       session.messages.push({
         role: 'system',
         content: `Latest market prices: ${JSON.stringify(prices)}`
+      });
+      session.messages.push({
+        role: 'system',
+        content: `User's current balances: ${JSON.stringify(balances)}`
       });
       session.lastActivity = now;
       this.lastGreetings.set(user.walletAddress, now);

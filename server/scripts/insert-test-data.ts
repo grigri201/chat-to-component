@@ -1,9 +1,11 @@
 import { PriceModel } from '../src/core/db/models/price.model';
 import { OrderModel, type OrderDirection, type OrderType, type OrderStatus } from '../src/core/db/models/order.model';
+import { BalanceModel } from '../src/core/db/models/balance.model';
 
 async function insertTestData() {
     const priceModel = PriceModel.getInstance();
     const orderModel = OrderModel.getInstance();
+    const balanceModel = BalanceModel.getInstance();
 
     // Test data for prices
     const testAssets = [
@@ -50,6 +52,25 @@ async function insertTestData() {
                         status: statuses[Math.floor(Math.random() * statuses.length)]
                     });
                 }
+            }
+        }
+    }
+
+    // Test data for balances
+    // Each wallet will have balance history for the past 7 days for each asset
+    for (const wallet of testWallets) {
+        for (const asset of testAssets) {
+            // Insert balance data for each day in the past 7 days
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const quantity = (Math.random() * 1000).toFixed(2);
+                
+                // Use direct SQL insertion to set specific dates
+                await balanceModel.run(
+                    'INSERT INTO balances (wallet_address, asset_address, quantity, created_at) VALUES (?, ?, ?, datetime(?))',
+                    [wallet, asset, parseFloat(quantity), date.toISOString()]
+                );
             }
         }
     }

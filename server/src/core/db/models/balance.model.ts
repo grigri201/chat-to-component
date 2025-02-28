@@ -5,6 +5,7 @@ export interface Balance {
     wallet_address: string;
     asset_address: string;
     quantity: number;
+    created_at: string;
 }
 
 export class BalanceModel extends BaseDB {
@@ -38,16 +39,28 @@ export class BalanceModel extends BaseDB {
             );
         } else {
             await this.run(
-                'INSERT INTO balances (wallet_address, asset_address, quantity) VALUES (?, ?, ?)',
+                'INSERT INTO balances (wallet_address, asset_address, quantity, created_at) VALUES (?, ?, ?, datetime("now"))',
                 [walletAddress, assetAddress, quantity]
             );
         }
     }
 
-    async getAllBalances(walletAddress: string): Promise<Balance[]> {
-        return this.all<Balance>(
-            'SELECT * FROM balances WHERE wallet_address = ?',
-            [walletAddress]
-        );
+    async getAllBalances(walletAddress: string, startDate?: Date, endDate?: Date): Promise<Balance[]> {
+        let query = 'SELECT * FROM balances WHERE wallet_address = ?';
+        const params: (string | Date)[] = [walletAddress];
+
+        if (startDate || endDate) {
+            if (startDate) {
+                query += ' AND created_at >= datetime(?)';
+                params.push(startDate);
+            }
+            if (endDate) {
+                query += ' AND created_at <= datetime(?)';
+                params.push(endDate);
+            }
+        }
+
+        query += ' ORDER BY created_at DESC';
+        return this.all<Balance>(query, params);
     }
 }

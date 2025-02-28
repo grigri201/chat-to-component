@@ -50,8 +50,8 @@ export async function up(): Promise<void> {
             wallet_address TEXT NOT NULL,
             asset_address TEXT NOT NULL,
             quantity REAL NOT NULL,
-            FOREIGN KEY (wallet_address) REFERENCES users(wallet_address),
-            UNIQUE(wallet_address, asset_address)
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(wallet_address, asset_address, created_at)
         );
     `);
 }

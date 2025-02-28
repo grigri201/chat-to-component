@@ -48,6 +48,13 @@ export class ChunkFormatter {
 
       return this.messages;
     }
+    const lastMessage = this.messages[this.messages.length - 1];
+    if (!lastMessage) {
+      this.messages.push({
+        type: "completion",
+        text: chunk,
+      });
+    }
 
     // Add chunk to buffer
     this.buffer += chunk;
@@ -63,6 +70,7 @@ export class ChunkFormatter {
   private handleJsonMode(): Message[] {
     // Look for the end marker '```' that is not part of '```json'
     const endMatch = this.buffer.match(/```(?!(json|[a-zA-Z]))/);
+    const lastMessage = this.messages[this.messages.length - 1];
     if (endMatch?.index !== undefined) {
       // Extract JSON content
       this.jsonBuffer += this.buffer.substring(0, endMatch.index);
@@ -71,7 +79,6 @@ export class ChunkFormatter {
       const jsonContent = parseJsonBlocks<Message>(this.jsonBuffer);
       this.jsonBuffer = "";
       this.isJsonMode = false;
-      const lastMessage = this.messages[this.messages.length - 1];
       if (jsonContent !== null) {
         if (lastMessage.type === "completion") {
           this.messages.push(jsonContent);
@@ -86,7 +93,6 @@ export class ChunkFormatter {
     this.jsonBuffer += this.buffer;
     this.buffer = "";
     const jsonContent = parseJsonBlocks<Message>(this.jsonBuffer);
-    const lastMessage = this.messages[this.messages.length - 1];
     if (jsonContent !== null) {
       if (lastMessage.type === "completion") {
         this.messages.push(jsonContent);
@@ -103,14 +109,12 @@ export class ChunkFormatter {
       return this.messages;
     }
 
+    const lastMessage = this.messages[this.messages.length - 1];
     const jsonStart = this.buffer.indexOf("```json");
     if (jsonStart !== -1) {
       // Handle text before JSON block
       if (jsonStart > 0) {
-        this.messages.push({
-          type: "completion",
-          text: this.buffer.substring(0, jsonStart),
-        });
+        lastMessage.text = this.buffer.substring(0, jsonStart);
       }
 
       // Check if we have a complete JSON block
@@ -141,6 +145,7 @@ export class ChunkFormatter {
       this.isJsonMode = true;
       return this.messages;
     } else {
+      lastMessage.text = this.buffer;
       // Keep buffering until we find a JSON block or get an empty chunk
       return this.messages;
     }

@@ -1,5 +1,5 @@
-import { Message, AssetsMessage } from "@/lib/chunk-formatter";
-import DynamicCodeRenderer from "@/components/DynamicComponentLoader";
+import { Message } from "@/lib/chunk-formatter";
+import StockItem, { Stock } from "./StockItem";
 
 interface MessageItemProps {
   message: Message;
@@ -17,13 +17,14 @@ export const MessageItem = ({ message }: MessageItemProps) => {
           {message.text}
         </div>
       );
-    case 'react':
+    case 'assets':
       return (
-        <div className="space-y-4">
-          <DynamicCodeRenderer 
-            code={(message as AssetsMessage).code} 
-            eventCallback={handleEventCallback} 
-          />
+        <div className="grid grid-cols-3 gap-4">
+          {
+            message.data.map((stock: Stock, index: number) => (
+              <StockItem key={index} stock={stock} onItemClick={handleEventCallback} />
+            ))
+          }
         </div>
       );
     case 'error':

@@ -13,6 +13,7 @@ async function completionStreaming(
   path: string,
   prompt: string,
   onChunk: (chunk: string) => void,
+  onEnd: () => void,
   onError: (error: Error) => void,
   sessionId?: string,
 ) {
@@ -45,6 +46,7 @@ async function completionStreaming(
     }
     // send empty string to indicate that the stream is complete
     onChunk('');
+    onEnd();
   } catch (error) {
     onError(error instanceof Error ? error : new Error('Unknown error occurred'));
   }
@@ -100,11 +102,12 @@ export async function getStats(): Promise<any> {
  */
 export function sayHi(
   onChunk: (messages: Message[]) => void,
+  onEnd: () => void,
   onError: (error: Error) => void,
   sessionId?: string,
 ): Promise<void> {
   return completionStreaming('/chat/hi', '', (chunk: string) => {
     const messages = chunkFormatter.handleChunk(chunk);
     onChunk(messages);
-  }, onError, sessionId);
+  },onEnd, onError, sessionId);
 }

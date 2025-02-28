@@ -4,12 +4,9 @@ import { useState, useEffect } from "react";
 import * as api from "../lib/api";
 import { storage } from "@/lib/storage";
 import {
-  CompletionMessage,
   Message,
-  AssetsMessage,
 } from "@/lib/chunk-formatter";
 import { MessageItem } from "@/components/MessageItem";
-import { parseJsonBlocks } from "@/lib/json-helper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,32 +25,15 @@ export default function Home() {
 
   useEffect(() => {
     const sayHi = async () => {
-      let currentResponse: CompletionMessage = { type: "completion", text: "" };
+      let currentResponse: Message = { type: "completion", text: "" };
 
       try {
         await api.sayHi(
           (messages: Message[]) => {
-            console.log(messages);
-            for (const message of messages) {
-              if (message.type === "completion") {
-                currentResponse.text += message.text;
-                setMessages((prev) => [...prev.slice(0, -1), currentResponse]);
-              } else if (message.type === "session") {
-                storage.setSessionId(message.sessionId);
-              } else {
-                setMessages((prev) => {
-                  const latestMessage = prev[prev.length - 1];
-                  if (
-                    latestMessage.type === "completion" ||
-                    latestMessage.type === "session"
-                  ) {
-                    return [...prev, currentResponse];
-                  } else {
-                    return [...prev.slice(0, -1), currentResponse];
-                  }
-                });
-              }
-            }
+            setMessages((prev) => [...prev.slice(0, -messages.length), ...messages]);
+          },
+          () => {
+            setIsLoading(false);
           },
           (error) => {
             console.error("Error:", error);
@@ -79,7 +59,7 @@ export default function Home() {
     if (!prompt.trim() || isLoading) return;
 
     setIsLoading(true);
-    let currentResponse: CompletionMessage = { type: "completion", text: "" };
+    let currentResponse: Message = { type: "completion", text: "" };
 
     try {
       await api.getCompletion(
@@ -87,10 +67,12 @@ export default function Home() {
         (messages: Message[]) => {
           for (const message of messages) {
             if (message.type === "completion") {
-              currentResponse.text += message.text;
+              currentResponse.text += message.text || "";
               setMessages((prev) => [...prev.slice(0, -1), currentResponse]);
             } else if (message.type === "session") {
-              storage.setSessionId(message.sessionId);
+              if (message.sessionId) {
+                storage.setSessionId(message.sessionId);
+              }
             } else {
               setMessages((prev) => [...prev, message]);
             }
